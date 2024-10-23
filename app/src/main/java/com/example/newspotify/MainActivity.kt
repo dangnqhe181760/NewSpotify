@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.imageapp.MainViewModel
 import com.example.newspotify.ui.theme.NewSpotifyTheme
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
@@ -26,9 +30,18 @@ private val clientId = "b8ece90116fd47898d863c0e0112ddd8"
 private val redirectUri = "com.example.newspotify://callback"
 private var spotifyAppRemote: SpotifyAppRemote? = null
 private val REQUEST_CODE = 1337
+private var accessToken = ""
+private val scopes = arrayOf(
+    "app-remote-control",
+    "user-modify-playback-state",
+    "user-top-read",             // To read user's top tracks
+    "playlist-read-private",     // To read user's private playlists
+    "playlist-modify-public",    // To modify user's public playlists
+    "user-read-playback-state",  // To read the user's current playback state
+    "user-read-recently-played"  // To access recently played tracks
+)
 
 class MainActivity : ComponentActivity() {
-    private val scopes = arrayOf("app-remote-control", "user-modify-playback-state")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +65,16 @@ class MainActivity : ComponentActivity() {
             when (response.type) {
                 AuthorizationResponse.Type.TOKEN -> {
                     // Handle successful authentication
-                    connectToSpotifyAppRemote(response.accessToken)
+                    accessToken = response.accessToken
+                    connectToSpotifyAppRemote(accessToken)
+
+                    // Set content after token is obtained
+                    setContent {
+                        NewSpotifyTheme {
+                            Log.d("Token", "$accessToken")
+                            HomePage()
+                        }
+                    }
                 }
                 AuthorizationResponse.Type.ERROR -> {
                     // Handle error
@@ -113,17 +135,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    NewSpotifyTheme {
-        Greeting("Android")
-    }
+fun HomePage() {
+    val viewModel: MainViewModel = viewModel()
+    val observedTracks by viewModel.trackResponse.collectAsState(initial = TopTracksResponse(emptyList(), 0, 0, 0, "", null, null))
+    viewModel.fetchTopTracks("Bearer $accessToken")
+    Log.d("Top tracks: ", observedTracks.toString())
+//    observedContacts?.let { ImageGrid(contacts = it) }
 }

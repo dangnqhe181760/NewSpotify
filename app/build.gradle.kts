@@ -72,4 +72,9 @@ dependencies {
     implementation ("androidx.browser:browser:1.8.0")
     implementation ("androidx.appcompat:appcompat:1.7.0")
     implementation ("com.google.code.gson:gson:2.11.0")
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+    implementation("io.coil-kt:coil-compose:1.3.2")
 }
