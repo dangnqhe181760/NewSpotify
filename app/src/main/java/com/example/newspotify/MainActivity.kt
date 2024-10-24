@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -163,15 +164,16 @@ fun HomePage() {
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-fun TrackItem(track: com.example.newspotify.Track) {
+fun TrackItem(track: com.example.newspotify.Track, onTrackClick: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .clickable { onTrackClick(track.uri) }
     ) {
         // Album Art or Track Image
         Image(
-            painter = rememberImagePainter(track?.images?.get(0)?.url?: ""),
+            painter = rememberImagePainter(track?.album?.images?.get(0)?.url?: ""),
             contentDescription = "Track Image",
             modifier = Modifier
                 .size(64.dp)
@@ -216,7 +218,19 @@ fun TrackItem(track: com.example.newspotify.Track) {
 fun TrackList(tracks: TopTracksResponse) {
     LazyColumn {
         items(tracks.items) { track ->
-            TrackItem(track = track)
+            TrackItem(track = track, onTrackClick = { uri ->
+                spotifyAppRemote?.let {
+                    // Play a playlist
+                    val playlistURI = uri
+                    Log.d("URI", playlistURI)
+                    it.playerApi.play(playlistURI)
+                    // Subscribe to PlayerState
+                    it.playerApi.subscribeToPlayerState().setEventCallback {
+                        val track: Track = it.track
+                        Log.d("MainActivity", track.name + " by " + track.artist.name)
+                    }
+                }
+            })
         }
     }
 }
