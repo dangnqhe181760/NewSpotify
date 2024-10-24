@@ -6,21 +6,39 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import com.example.imageapp.MainViewModel
 import com.example.newspotify.ui.theme.NewSpotifyTheme
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.types.Artist
 import com.spotify.protocol.types.Track
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
@@ -140,5 +158,72 @@ fun HomePage() {
     val observedTracks by viewModel.trackResponse.collectAsState(initial = TopTracksResponse(emptyList(), 0, 0, 0, "", null, null))
     viewModel.fetchTopTracks("Bearer $accessToken")
     Log.d("Top tracks: ", observedTracks.toString())
-//    observedContacts?.let { ImageGrid(contacts = it) }
+    observedTracks?.let { TrackList(tracks = it) }
 }
+
+@OptIn(ExperimentalCoilApi::class)
+@Composable
+fun TrackItem(track: com.example.newspotify.Track) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        // Album Art or Track Image
+        Image(
+            painter = rememberImagePainter(track?.images?.get(0)?.url?: ""),
+            contentDescription = "Track Image",
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp)
+        ) {
+            Text(
+                text = track.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Artist: ${getArtists(track.artists)?: ""}",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Album: ${track.album.name}",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Duration: ${track.duration / 1000}s",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+fun TrackList(tracks: TopTracksResponse) {
+    LazyColumn {
+        items(tracks.items) { track ->
+            TrackItem(track = track)
+        }
+    }
+}
+
+fun getArtists(artists: List<Artist>): String {
+    return artists.joinToString(", ") { it.name }
+}
+
+
+

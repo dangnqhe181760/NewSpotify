@@ -1,7 +1,5 @@
 package com.example.newspotify
 
-import com.spotify.protocol.types.Track
-
 data class TopTracksResponse(
     val items: List<Track>, // This is the list of tracks you care about
     val total: Int,
